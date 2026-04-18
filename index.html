@@ -1,0 +1,450 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, user-scalable=no">
+    <title>DJ Katz Mixer</title>
+    <style>
+        * {
+            box-sizing: border-box;
+            user-select: none;
+            -webkit-tap-highlight-color: transparent;
+        }
+        body {
+            margin: 0;
+            min-height: 100vh;
+            background: linear-gradient(135deg, #1a1a2e 0%, #16213e 100%);
+            font-family: 'Segoe UI', system-ui, -apple-system, sans-serif;
+            color: white;
+            padding: 16px;
+        }
+        .container {
+            max-width: 600px;
+            margin: 0 auto;
+        }
+        h1 {
+            text-align: center;
+            font-size: 1.8rem;
+            margin: 0 0 8px 0;
+            background: linear-gradient(90deg, #00d2ff, #3a7bd5);
+            -webkit-background-clip: text;
+            background-clip: text;
+            color: transparent;
+        }
+        .sub {
+            text-align: center;
+            color: #888;
+            margin-bottom: 24px;
+            font-size: 0.8rem;
+        }
+        .decks {
+            display: flex;
+            flex-direction: column;
+            gap: 24px;
+            margin-bottom: 24px;
+        }
+        .deck {
+            background: rgba(0,0,0,0.5);
+            border-radius: 24px;
+            padding: 16px;
+            backdrop-filter: blur(4px);
+            border: 1px solid rgba(255,255,255,0.1);
+        }
+        .deck-title {
+            font-weight: bold;
+            margin-bottom: 12px;
+            font-size: 1.2rem;
+            display: flex;
+            justify-content: space-between;
+        }
+        .waveform {
+            background: #0a0a1a;
+            height: 80px;
+            border-radius: 12px;
+            margin-bottom: 12px;
+            position: relative;
+            overflow: hidden;
+        }
+        canvas {
+            width: 100%;
+            height: 100%;
+            display: block;
+        }
+        .controls {
+            display: flex;
+            gap: 12px;
+            flex-wrap: wrap;
+            align-items: center;
+            justify-content: space-between;
+        }
+        button {
+            background: #2c3e66;
+            border: none;
+            color: white;
+            padding: 8px 16px;
+            border-radius: 40px;
+            font-weight: bold;
+            cursor: pointer;
+            transition: 0.2s;
+        }
+        button:active {
+            transform: scale(0.96);
+            background: #1e2a4a;
+        }
+        input[type="range"] {
+            flex: 1;
+            min-width: 120px;
+        }
+        .file-label {
+            background: #3a5a8a;
+            padding: 8px 16px;
+            border-radius: 40px;
+            font-size: 0.8rem;
+            cursor: pointer;
+        }
+        .master-section {
+            background: rgba(0,0,0,0.6);
+            border-radius: 24px;
+            padding: 16px;
+            margin-top: 8px;
+        }
+        .crossfader {
+            margin: 16px 0;
+        }
+        .crossfader input {
+            width: 100%;
+        }
+        .record-btn {
+            background: #e74c3c;
+            width: 100%;
+            padding: 12px;
+            font-size: 1.1rem;
+            margin-top: 12px;
+        }
+        .record-btn.recording {
+            background: #c0392b;
+            animation: pulse 1s infinite;
+        }
+        @keyframes pulse {
+            0% { opacity: 1; }
+            50% { opacity: 0.7; }
+            100% { opacity: 1; }
+        }
+        .sync-btn {
+            background: #27ae60;
+        }
+        .filter-group {
+            display: flex;
+            gap: 8px;
+            margin-top: 12px;
+            flex-wrap: wrap;
+        }
+        .filter-btn {
+            background: #34495e;
+            font-size: 0.7rem;
+            padding: 4px 12px;
+        }
+        .filter-btn.active {
+            background: #f39c12;
+            color: #1a1a2e;
+        }
+        footer {
+            text-align: center;
+            font-size: 0.7rem;
+            color: #555;
+            margin-top: 24px;
+        }
+    </style>
+</head>
+<body>
+<div class="container">
+    <h1>🎧 KATZ STUDIO</h1>
+    <div class="sub">DJ Mixer • Telegram Mini App</div>
+
+    <div class="decks">
+        <div class="deck">
+            <div class="deck-title">
+                <span>🎛️ DECK A</span>
+                <span class="file-label" onclick="document.getElementById('fileA').click()">📁 Загрузить</span>
+            </div>
+            <div class="waveform">
+                <canvas id="waveformA" width="600" height="80" style="width:100%; height:80px"></canvas>
+            </div>
+            <div class="controls">
+                <button id="playPauseA">▶️ Play</button>
+                <span>🔊 Gain</span>
+                <input type="range" id="gainA" min="0" max="1.5" step="0.01" value="1">
+            </div>
+            <div class="filter-group">
+                <button class="filter-btn" data-deck="A" data-filter="lowpass">🔽 НЧ</button>
+                <button class="filter-btn" data-deck="A" data-filter="bandpass">🎚️ СЧ</button>
+                <button class="filter-btn" data-deck="A" data-filter="highpass">🔼 ВЧ</button>
+                <button class="filter-btn" data-deck="A" data-filter="off">🔘 Off</button>
+            </div>
+            <input type="file" id="fileA" accept="audio/mpeg,audio/wav,audio/ogg" style="display:none">
+        </div>
+
+        <div class="deck">
+            <div class="deck-title">
+                <span>🎛️ DECK B</span>
+                <span class="file-label" onclick="document.getElementById('fileB').click()">📁 Загрузить</span>
+            </div>
+            <div class="waveform">
+                <canvas id="waveformB" width="600" height="80" style="width:100%; height:80px"></canvas>
+            </div>
+            <div class="controls">
+                <button id="playPauseB">▶️ Play</button>
+                <span>🔊 Gain</span>
+                <input type="range" id="gainB" min="0" max="1.5" step="0.01" value="1">
+            </div>
+            <div class="filter-group">
+                <button class="filter-btn" data-deck="B" data-filter="lowpass">🔽 НЧ</button>
+                <button class="filter-btn" data-deck="B" data-filter="bandpass">🎚️ СЧ</button>
+                <button class="filter-btn" data-deck="B" data-filter="highpass">🔼 ВЧ</button>
+                <button class="filter-btn" data-deck="B" data-filter="off">🔘 Off</button>
+            </div>
+            <input type="file" id="fileB" accept="audio/mpeg,audio/wav,audio/ogg" style="display:none">
+        </div>
+    </div>
+
+    <div class="master-section">
+        <div class="crossfader">
+            <label>🎚️ CROSSFADER</label>
+            <input type="range" id="crossfader" min="0" max="1" step="0.01" value="0.5">
+        </div>
+        <div class="controls" style="justify-content: space-between; margin-top: 8px;">
+            <span>🔊 MASTER VOLUME</span>
+            <input type="range" id="masterGain" min="0" max="1.5" step="0.01" value="0.8" style="flex:2">
+        </div>
+        <button id="syncBtn" class="sync-btn">🔄 SYNC BPM (по A)</button>
+        <button id="recordBtn" class="record-btn">⏺️ Записать микс</button>
+        <div id="recordStatus" style="font-size: 0.7rem; text-align: center; margin-top: 8px;"></div>
+    </div>
+    <footer>v1.0 • Синхронизация BPM • Фильтры Low/Mid/High</footer>
+</div>
+
+<script src="https://cdn.jsdelivr.net/npm/tone@14.7.77/build/Tone.js"></script>
+<script>
+    Tone.start();
+    
+    const playerA = new Tone.Player().toDestination();
+    const playerB = new Tone.Player().toDestination();
+    
+    const gainA = new Tone.Gain(1);
+    const gainB = new Tone.Gain(1);
+    const masterGain = new Tone.Gain(0.8);
+    
+    let filterA = new Tone.Filter(20000, "lowpass");
+    let filterB = new Tone.Filter(20000, "lowpass");
+    filterA.frequency.value = 20000;
+    filterB.frequency.value = 20000;
+    filterA.type = "lowpass";
+    filterB.type = "lowpass";
+    
+    const crossFade = new Tone.CrossFade(0.5);
+    
+    playerA.chain(filterA, gainA, crossFade.a);
+    playerB.chain(filterB, gainB, crossFade.b);
+    crossFade.chain(masterGain, Tone.Destination);
+    
+    const gainASlider = document.getElementById('gainA');
+    const gainBSlider = document.getElementById('gainB');
+    const masterSlider = document.getElementById('masterGain');
+    const crossSlider = document.getElementById('crossfader');
+    
+    gainASlider.addEventListener('input', () => gainA.gain.value = parseFloat(gainASlider.value));
+    gainBSlider.addEventListener('input', () => gainB.gain.value = parseFloat(gainBSlider.value));
+    masterSlider.addEventListener('input', () => masterGain.gain.value = parseFloat(masterSlider.value));
+    crossSlider.addEventListener('input', () => crossFade.fade.value = parseFloat(crossSlider.value));
+    
+    const playPauseA = document.getElementById('playPauseA');
+    const playPauseB = document.getElementById('playPauseB');
+    let isPlayingA = false, isPlayingB = false;
+    
+    playPauseA.onclick = () => {
+        if (!playerA.buffer) return;
+        if (isPlayingA) {
+            playerA.stop();
+            playPauseA.textContent = '▶️ Play';
+        } else {
+            playerA.start();
+            playPauseA.textContent = '⏸️ Pause';
+        }
+        isPlayingA = !isPlayingA;
+    };
+    
+    playPauseB.onclick = () => {
+        if (!playerB.buffer) return;
+        if (isPlayingB) {
+            playerB.stop();
+            playPauseB.textContent = '▶️ Play';
+        } else {
+            playerB.start();
+            playPauseB.textContent = '⏸️ Pause';
+        }
+        isPlayingB = !isPlayingB;
+    };
+    
+    const fileAInput = document.getElementById('fileA');
+    const fileBInput = document.getElementById('fileB');
+    
+    function loadTrack(fileInput, player, waveformCanvasId) {
+        fileInput.onchange = async (e) => {
+            const file = e.target.files[0];
+            if (!file) return;
+            const url = URL.createObjectURL(file);
+            try {
+                await player.load(url);
+                const canvas = document.getElementById(waveformCanvasId);
+                if (canvas) {
+                    const ctx = canvas.getContext('2d');
+                    const w = canvas.clientWidth;
+                    const h = canvas.clientHeight;
+                    canvas.width = w;
+                    canvas.height = h;
+                    ctx.fillStyle = '#0a0a1a';
+                    ctx.fillRect(0,0,w,h);
+                    ctx.fillStyle = '#4a6fa5';
+                    for(let i=0; i<80; i++) {
+                        const height = Math.random() * h * 0.8 + 5;
+                        ctx.fillRect(i*8, (h-height)/2, 4, height);
+                    }
+                }
+            } catch(err) { console.error(err); }
+        };
+    }
+    
+    loadTrack(fileAInput, playerA, 'waveformA');
+    loadTrack(fileBInput, playerB, 'waveformB');
+    
+    function setFilter(deck, type) {
+        let filter;
+        if (deck === 'A') filter = filterA;
+        else filter = filterB;
+        
+        switch(type) {
+            case 'lowpass':
+                filter.type = 'lowpass';
+                filter.frequency.value = 800;
+                filter.Q.value = 1;
+                break;
+            case 'bandpass':
+                filter.type = 'bandpass';
+                filter.frequency.value = 1000;
+                filter.Q.value = 1.5;
+                break;
+            case 'highpass':
+                filter.type = 'highpass';
+                filter.frequency.value = 500;
+                filter.Q.value = 1;
+                break;
+            case 'off':
+                filter.frequency.value = 20000;
+                filter.type = 'lowpass';
+                break;
+        }
+    }
+    
+    document.querySelectorAll('.filter-btn').forEach(btn => {
+        btn.addEventListener('click', () => {
+            const deck = btn.getAttribute('data-deck');
+            const filterType = btn.getAttribute('data-filter');
+            setFilter(deck, filterType);
+            const parent = btn.parentElement;
+            parent.querySelectorAll('.filter-btn').forEach(b => b.classList.remove('active'));
+            btn.classList.add('active');
+        });
+    });
+    
+    document.getElementById('syncBtn').addEventListener('click', async () => {
+        if (!playerA.buffer || !playerB.buffer) {
+            alert('Загрузите оба трека');
+            return;
+        }
+        if (isPlayingA && isPlayingB) {
+            const currentTimeA = playerA.now();
+            playerB.stop();
+            playerB.start(currentTimeA);
+        } else {
+            alert('Оба трека должны играть');
+        }
+    });
+    
+    let mediaRecorder;
+    let audioChunks = [];
+    let isRecording = false;
+    const recordBtn = document.getElementById('recordBtn');
+    const recordStatus = document.getElementById('recordStatus');
+    
+    const dest = Tone.context.createMediaStreamDestination();
+    masterGain.connect(dest);
+    masterGain.disconnect(Tone.Destination);
+    masterGain.connect(dest);
+    masterGain.connect(Tone.Destination);
+    
+    recordBtn.onclick = async () => {
+        if (!isRecording) {
+            audioChunks = [];
+            mediaRecorder = new MediaRecorder(dest.stream);
+            mediaRecorder.ondataavailable = event => audioChunks.push(event.data);
+            mediaRecorder.onstop = () => {
+                const audioBlob = new Blob(audioChunks, { type: 'audio/mp3' });
+                const url = URL.createObjectURL(audioBlob);
+                const a = document.createElement('a');
+                a.href = url;
+                a.download = `katz_mix_${Date.now()}.mp3`;
+                a.click();
+                recordStatus.innerText = '✅ Запись сохранена!';
+                setTimeout(() => recordStatus.innerText = '', 3000);
+            };
+            mediaRecorder.start();
+            isRecording = true;
+            recordBtn.textContent = '⏹️ Остановить';
+            recordBtn.classList.add('recording');
+            recordStatus.innerText = '🔴 Запись...';
+        } else {
+            mediaRecorder.stop();
+            isRecording = false;
+            recordBtn.textContent = '⏺️ Записать микс';
+            recordBtn.classList.remove('recording');
+        }
+    };
+    
+    document.body.addEventListener('touchstart', () => {
+        if (Tone.context.state !== 'running') Tone.start();
+    });
+    
+    const canvasA = document.getElementById('waveformA');
+    if (canvasA) {
+        const ctx = canvasA.getContext('2d');
+        const w = canvasA.clientWidth;
+        const h = canvasA.clientHeight;
+        canvasA.width = w;
+        canvasA.height = h;
+        ctx.fillStyle = '#0a0a1a';
+        ctx.fillRect(0,0,w,h);
+        ctx.fillStyle = '#4a6fa5';
+        for(let i=0; i<80; i++) {
+            const height = Math.random() * h * 0.8 + 5;
+            ctx.fillRect(i*8, (h-height)/2, 4, height);
+        }
+    }
+    
+    const canvasB = document.getElementById('waveformB');
+    if (canvasB) {
+        const ctx = canvasB.getContext('2d');
+        const w = canvasB.clientWidth;
+        const h = canvasB.clientHeight;
+        canvasB.width = w;
+        canvasB.height = h;
+        ctx.fillStyle = '#0a0a1a';
+        ctx.fillRect(0,0,w,h);
+        ctx.fillStyle = '#4a6fa5';
+        for(let i=0; i<80; i++) {
+            const height = Math.random() * h * 0.8 + 5;
+            ctx.fillRect(i*8, (h-height)/2, 4, height);
+        }
+    }
+</script>
+</body>
+</html>
